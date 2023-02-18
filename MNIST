@@ -1,0 +1,540 @@
+=============================================import libraries===================================
+import tensorflow as tf
+from tensorflow import keras
+import numpy as num
+import matplotlib.pyplot as plot
+
+import warnings
+from sklearn.metrics import classification_report
+
+
+mnist_dataset = keras.datasets.mnist
+
+(X_train_data, Y_train_data), (x_test_data, y_test_data) = mnist_dataset.load_data()
+mnist_images = X_train_data / 255.0
+
+print("\nAvailabe number in MNIST: ", num.unique(y_test_data))
+print("\nTotal train images: ", len(Y_train_data))
+print("\nTotal test images: ", len(y_test_data))
+
+print("\nMNIST DATASET: ")
+minst_numbers = [
+                 'PREDICTION (0)', 'PREDICTION (1)', 'PREDICTION (2)', 
+                 'PREDICTION (3)', 'PREDICTION (4)', 'PREDICTION (5)', 
+                 'PREDICTION (6)', 'PREDICTION (7)', 'PREDICTION (8)', 
+                 'PREDICTION (9)'
+                 ]
+
+
+plot.figure(figsize=(16, 16))
+i=0
+while i < 100:
+    plot.subplot(10, 10, i + 1)
+    plot.xticks([])
+    plot.yticks([])
+    plot.grid(False)
+    plot.imshow(X_train_data[i], )
+    plot.xlabel(minst_numbers[Y_train_data[i]])
+    i+=1
+plot.show()
+
+X_train_data = X_train_data.reshape(60000, 784).astype('float32') / 255
+x_test_data = x_test_data.reshape(10000, 784).astype('float32') / 255
+
+Y_train_data = Y_train_data.astype('int32')
+y_test_data = y_test_data.astype('int32')
+
+# Reserve 10,000 samples for validation
+X_value = X_train_data[-10000:]
+y_value = Y_train_data[-10000:]
+X_train_data = X_train_data[:-10000]
+Y_train_data = Y_train_data[:-10000]
+
+Try the basic minibatch SGD. It is recommended to try different initializations, different batch
+# sizes, and different learning rates, in order to get a sense about how to tune the
+# hyperparameters (batch size, and, learning rate). Remember to create and use validation
+# dataset!. it will be very useful for you to read Chapter-11 of the textbook.
+# =============================================================================
+# Shallow neural network model using MiniBatch SGD
+
+print("Shallow neural network model using ADAM optimizer---------\n")
+
+learn_rate = 0.1
+mini_batch_size = 10000
+epoch_size = 15
+
+print("Training model using SGD Minibatch optimizer----------\n")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size)
+
+neural_model = keras.Sequential([keras.Input(shape=(784,)), keras.layers.Dense(10, activation='softmax')])
+
+warnings.filterwarnings('ignore')
+
+neural_model.compile(
+                      optimizer=keras.optimizers.SGD(learning_rate=learn_rate),
+                      loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                      metrics=['sparse_categorical_accuracy']
+                     )
+
+
+plot_data = neural_model.fit(
+                              X_train_data, Y_train_data,
+                              batch_size=mini_batch_size,
+                              epochs=epoch_size,
+                              validation_data=(X_value, y_value),
+                              verbose=0
+                             )
+
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].legend(['Train', 'Validation'])
+axes[1].set_title('Loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+
+
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('\nTest loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
+
+
+
+
+#--------------------------------------- new rate ----------------------------------------------------------------------------------------
+
+learn_rate = 0.01
+mini_batch_size = 500
+epoch_size = 30
+
+print("--------------------------------------------------------------------------------------------")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size)
+
+neural_model = keras.Sequential([keras.Input(shape=(784,)),keras.layers.Dense(10, activation='softmax')])
+
+neural_model.compile(
+                      optimizer=keras.optimizers.SGD(learning_rate=learn_rate),
+                      loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                      metrics=['sparse_categorical_accuracy']
+                     )
+
+plot_data = neural_model.fit(
+                              X_train_data, Y_train_data,
+                              batch_size=mini_batch_size,
+                              epochs=epoch_size,
+                              validation_data=(X_value, y_value), verbose=0
+                             )
+
+
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].set_title('loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+axes[1].legend(['Train', 'Validation'])
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('\nTest loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
+
+#--------------------------------------- new rate ----------------------------------------------------------------------------------------
+
+learn_rate = 0.001
+mini_batch_size = 100
+epoch_size = 30
+
+print("--------------------------------------------------------------------------------------------")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size)
+
+neural_model = keras.Sequential([keras.Input(shape=(784,)),keras.layers.Dense(10, activation='softmax')])
+
+neural_model.compile(
+                      optimizer=keras.optimizers.SGD(learning_rate=learn_rate),
+                      loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                      metrics=['sparse_categorical_accuracy']
+                    )
+
+plot_data = neural_model.fit(
+                              X_train_data, Y_train_data,
+                              batch_size=mini_batch_size,
+                              epochs=epoch_size,
+                              validation_data=(X_value, y_value),
+                              verbose=0
+                            )
+
+
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].legend(['Train', 'Validation'])
+axes[1].set_title('Loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('\nTest loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
+
+# It is recommended to try, at least, another optimization method (SGD momentum, RMSProp,
+# RMSProp momentum, AdaDelta, or Adam) and compare its performances to those of the
+# basic minibatch SGD on the MNIST dataset. Which methods you want to try and how many
+# you want to try and compare is up to you and up to the amount of time you have left to
+# complete the assignment. Remember, this is a research course. You may want to read
+# Chapter-8, which I will cover this week.
+# #Shallow neural network model using RMSprop optimizer
+# =============================================================================
+
+
+learn_rate = 0.01
+mini_batch_size = 500
+epoch_size = 30
+
+print("Shallow neural network model using RMSprop optimizer----------\n")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size)
+
+neural_model = keras.Sequential([keras.Input(shape=(784,)),keras.layers.Dense(10, activation='softmax')])
+
+neural_model.compile(
+                        keras.optimizers.RMSprop(learning_rate=learn_rate),
+                        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                        metrics=['sparse_categorical_accuracy']
+                    )
+
+plot_data = neural_model.fit(
+                                X_train_data, Y_train_data,
+                                batch_size=mini_batch_size,
+                                epochs=epoch_size,
+                                validation_data=(X_value, y_value), verbose=0
+                            )
+
+
+# visulatizing model learning accuracy and loss on training and validation data
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].legend(['Train', 'Validation'])
+axes[1].set_title('Loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('Test loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
+
+#-------------------------------------------------------new-----------------------------------------------------------------------------------
+
+learn_rate = 0.01
+mini_batch_size = 500
+epoch_size = 30
+
+print("Deep neural network model using ADAM optimizer----------\n")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size)
+
+neural_model = keras.Sequential([keras.Input(shape=(784,)),keras.layers.Dense(10, activation='softmax')])
+
+neural_model.compile(
+                        optimizer=keras.optimizers.Adam(learning_rate=learn_rate),
+                        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                        metrics=['sparse_categorical_accuracy']
+                    )
+
+plot_data = neural_model.fit(
+                                X_train_data, Y_train_data,
+                                batch_size=mini_batch_size,
+                                epochs=epoch_size,
+                                validation_data=(X_value, y_value), verbose=0
+                            )
+
+# visulatizing model learning accuracy and loss on training and validation data
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].legend(['Train', 'Validation'])
+axes[1].set_title('Loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+
+
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('Test loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+#from sklearn.metrics import classification_report
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
+
+#-------------------------------------------------------new-----------------------------------------------------------------------------------
+
+
+learn_rate = 0.01
+mini_batch_size = 500
+epoch_size = 30
+hidden_layer_size = 100
+
+print("Deep neural network model using SGD optimizer----------\n")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size,"\nhidden_layer_size=",hidden_layer_size)
+
+neural_model = keras.Sequential(
+                                [keras.Input(shape=(784,)),
+                                keras.layers.Dense(hidden_layer_size, activation='relu'),
+                                keras.layers.Dense(hidden_layer_size, activation='relu'),
+                                keras.layers.Dense(10, activation='softmax')]
+                              )
+
+neural_model.summary()
+
+neural_model.compile(
+                        keras.optimizers.SGD(learning_rate=learn_rate),
+                        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                        metrics=['sparse_categorical_accuracy']
+                    )
+
+plot_data = neural_model.fit(
+                                X_train_data, Y_train_data,
+                                batch_size=mini_batch_size,
+                                epochs=epoch_size,
+                                validation_data=(X_value, y_value), verbose=0
+                            )
+
+
+# visulatizing model learning accuracy and loss on training and validation data
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].legend(['Train', 'Validation'])
+axes[1].set_title('Loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('Test loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+#from sklearn.metrics import classification_report
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
+
+#-------------------------------------------------------------------------new-------------------------------------------------------------
+learn_rate = 0.01
+mini_batch_size = 500
+epoch_size = 30
+hidden_layer_size = 100
+
+print("Deep neural network model using RMSprop optimizer----------\n")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size,"\nhidden_layer_size=",hidden_layer_size)
+
+neural_model = keras.Sequential([
+                                    keras.Input(shape=(784,)),
+                                    keras.layers.Dense(hidden_layer_size, activation='relu'),
+                                    keras.layers.Dense(hidden_layer_size, activation='relu'),
+                                    keras.layers.Dense(10, activation='softmax')
+                                ])
+
+neural_model.compile(
+                        keras.optimizers.RMSprop(learning_rate=learn_rate),
+                        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                        metrics=['sparse_categorical_accuracy']
+                    )
+
+plot_data = neural_model.fit(
+                                X_train_data, Y_train_data,
+                                batch_size=mini_batch_size,
+                                epochs=epoch_size,
+                                validation_data=(X_value, y_value), verbose=0
+                            )
+
+# visulatizing model learning accuracy and loss on training and validation data
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].legend(['Train', 'Validation'])
+axes[1].set_title('Loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+
+
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('Test loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
+
+#---------------------------------------------------------------------------------new---------------------------------------------------------------
+learn_rate = 0.01
+mini_batch_size = 500
+epoch_size = 30
+hidden_layer_size = 100
+
+print("Deep neural network model using ADAM optimizer----------\n")
+print("\nLearning Rate=", learn_rate, "\nMini batch size=", mini_batch_size, "\nEpochs=", epoch_size,"\nhidden_layer_size=",hidden_layer_size)
+
+neural_model = keras.Sequential([
+                                 keras.Input(shape=(784,)),
+                                 keras.layers.Dense(hidden_layer_size, activation='relu'),
+                                 keras.layers.Dense(hidden_layer_size, activation='relu'),
+                                 keras.layers.Dense(10, activation='softmax')
+                                ])
+
+neural_model.compile(
+                        optimizer=keras.optimizers.Adam(learning_rate=learn_rate),
+                        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                        metrics=['sparse_categorical_accuracy']
+                    )
+
+plot_data = neural_model.fit(
+                                X_train_data, Y_train_data,
+                                batch_size=mini_batch_size,
+                                epochs=epoch_size,
+                                validation_data=(X_value, y_value), verbose=0
+                            )
+
+# visulatizing model learning accuracy and loss on training and validation data
+fig, axes = plot.subplots(nrows=1, ncols=2, figsize=(8, 4))
+
+# Plot training & validation accuracy values
+axes[0].plot(plot_data.history['sparse_categorical_accuracy'])
+axes[0].plot(plot_data.history['val_sparse_categorical_accuracy'])
+axes[0].legend(['Train', 'Validation'], loc='upper left')
+axes[0].set_title('Accuracy Curve')
+axes[0].set_ylabel('Accuracy')
+axes[0].set_xlabel('Epoch')
+
+
+# Plot training & validation loss values
+axes[1].plot(plot_data.history['loss'])
+axes[1].plot(plot_data.history['val_loss'])
+axes[1].legend(['Train', 'Validation'])
+axes[1].set_title('Loss Curve')
+axes[1].set_ylabel('Loss')
+axes[1].set_xlabel('Epoch')
+
+plot.tight_layout()
+plot.show()
+
+print('\nCheaking on TEST DATASET-----------')
+testDataset_loss, testDataset_accuracy = neural_model.evaluate(x_test_data, y_test_data, verbose=0)
+print('Test loss: {0:.2f}, Test Accuracy: {1:.2f}%'.format(testDataset_loss, testDataset_accuracy * 100))
+
+
+
+prediction = neural_model.predict(x_test_data, batch_size=mini_batch_size, verbose=0)
+pred_boolian = num.argmax(prediction, axis=1)
+print(classification_report(y_test_data, pred_boolian))
